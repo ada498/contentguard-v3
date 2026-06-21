@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <gupdate xmlns='http://www.google.com/update2/response' protocol='2.0'>
-  <app appid='TON_ID'>
-    <updatecheck codebase='URL_DU_CRX' version='1.0' />
+  <app appid=' acgamfffligaeenfinkjbckmcmboehdg'>
+    <updatecheck codebase='https://github.com/ada498/contentguard-v3/releases/tag/v1.0' version='1.0' />
   </app>
 </gupdate>
