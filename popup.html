@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ContentGuard</title>
+  <style>
+    :root {
+      --bg:          #0e0e14;
+      --surface:     #18181f;
+      --surface2:    #202028;
+      --surface3:    #28282f;
+      --border:      rgba(255,255,255,0.07);
+      --border2:     rgba(255,255,255,0.12);
+      --text:        #e2e2ee;
+      --muted:       rgba(226,226,238,0.4);
+      --accent:      #6366f1;
+      --accent-soft: rgba(99,102,241,0.18);
+      --danger:      #ef4444;
+      --danger-soft: rgba(239,68,68,0.12);
+      --success:     #22c55e;
+      --radius:      10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 360px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      user-select: none;
+    }
+    .header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-logo { font-size: 20px; flex-shrink: 0; }
+    .header-info { flex: 1 }
+    .header-name { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+    .header-desc { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle input { display: none; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--surface3); border: 1px solid var(--border2); border-radius: 99px;
+      cursor: pointer; transition: background .2s, border-color .2s;
+    }
+    .toggle-thumb {
+      position: absolute; width: 16px; height: 16px;
+      background: var(--muted); border-radius: 50%; top: 2px; left: 2px;
+      transition: transform .2s, background .2s; pointer-events: none;
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--accent); border-color: var(--accent); }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: #fff; }
+
+    .section { padding: 14px 18px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.6px; color: var(--muted); font-weight: 600; }
+    .count-pill { background: var(--surface3); border: 1px solid var(--border2); border-radius: 99px; font-size: 11px; color: var(--muted); padding: 2px 9px; min-width: 24px; text-align: center; }
+
+    .add-row { display: flex; gap: 7px; margin-bottom: 12px; }
+    .word-input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .word-input::placeholder { color: var(--muted); }
+    .word-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .word-input.shake { border-color: var(--danger); animation: shake .3s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+    .btn-add { padding: 8px 14px; color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s, transform .1s; white-space: nowrap; }
+    .btn-add:hover { opacity: .88; } .btn-add:active { transform: scale(.97); }
+    .btn-add-word { background: var(--accent); }
+    .btn-add-combo { background: #f59e0b; }
+    .btn-add-url { background: #06b6d4; }
+
+    .word-list { display: flex; flex-direction: column; gap: 5px; max-height: 160px; overflow-y: auto; }
+    .word-list::-webkit-scrollbar { width: 3px; }
+    .word-list::-webkit-scrollbar-track { background: transparent; }
+    .word-list::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 99px; }
+
+    .word-item { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 11px; transition: border-color .15s; }
+    .word-item:hover { border-color: var(--border2); }
+    .word-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .word-text { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .word-del { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: none; border: none; border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 16px; transition: color .15s, background .15s; flex-shrink: 0; }
+    .word-del:hover { color: var(--danger); background: var(--danger-soft); }
+
+    .empty-state { text-align: center; padding: 16px 0 10px; }
+    .empty-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+    .empty-text { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    .divider { height: 1px; background: var(--border); }
+
+    .options { padding: 10px 18px; }
+    .option-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; }
+    .option-label { font-size: 13px; color: rgba(226,226,238,0.7); }
+    .option-hint { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .footer {
+      padding: 10px 18px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .footer-status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; box-shadow: 0 0 5px rgba(34,197,94,0.5); }
+    .status-dot.off { background: var(--muted); box-shadow: none; }
+    .btn-clear { font-size: 12px; color: var(--muted); background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: color .15s, background .15s; }
+    .btn-clear:hover { color: var(--danger); background: var(--danger-soft); }
+
+    #main-content.disabled .section,
+    #main-content.disabled .options,
+    #main-content.disabled .divider { opacity: 0.38; pointer-events: none; }
+
+    .threshold-input {
+      width: 50px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 4px 8px; text-align: center; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">🛡️</div>
+    <div class="header-info">
+      <div class="header-name">ContentGuard</div>
+      <div class="header-desc">Blocage par contenu de page</div>
+    </div>
+    <label class="toggle" title="Activer / Désactiver">
+      <input type="checkbox" id="toggle-enabled" />
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  </div>
+
+  <div id="main-content">
+
+    <!-- WORDS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-label">Mots à bloquer</span>
+        <span class="count-pill" id="word-count">0</span>
+      </div>
+      <div class="add-row">
+        <input type="text" id="word-input" class="word-input" placeholder="Ajouter un mot ou une phrase…" autocomplete="off" spellcheck="false" />
+        <button class="btn-add btn-add-word" id="btn-add">+ Ajouter</button>
+      </div>
+      <div class="word-list" id="word-list"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- COMBOS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-label">Combinaisons contextuelles</span>
+        <span class="count-pill" id="combo-count">0</span>
+      </div>
+      <div class="add-row">
+        <input type="text" id="combo-input" class="word-input" placeholder="Ex: adult content warning" autocomplete="off" spellcheck="false" />
+        <button class="btn-add btn-add-combo" id="btn-add-combo">+ Combo</button>
+      </div>
+      <div class="word-list" id="combo-list"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- URL PATTERNS -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-label">URLs médias à bloquer</span>
+        <span class="count-pill" id="url-count">0</span>
+      </div>
+      <div class="add-row">
+        <input type="text" id="url-input" class="word-input" placeholder="Ex: adult, porn, xxx, *.jpg" autocomplete="off" spellcheck="false" />
+        <button class="btn-add btn-add-url" id="btn-add-url">+ URL</button>
+      </div>
+      <div class="word-list" id="url-list"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- OPTIONS -->
+    <div class="options">
+      <div class="option-row">
+        <div>
+          <div class="option-label">Sensible à la casse</div>
+          <div class="option-hint">Ex: distingue "Jeux" et "jeux"</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-case" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-label">Mot entier uniquement</div>
+          <div class="option-hint">Ex: "jeu" ne bloque pas "jeux"</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-whole" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-label">Scanner les URLs des médias</div>
+          <div class="option-hint">Images, vidéos, iframes</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-media" checked />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-label">Scanner les attributs alt</div>
+          <div class="option-hint">Texte descriptif des images</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-alt" checked />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-label">Seuil contextuel</div>
+          <div class="option-hint">Min. mots d'une combo (2‑5)</div>
+        </div>
+        <input type="number" id="threshold" class="threshold-input" min="2" max="5" value="2" />
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="footer-status">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text"></span>
+    </div>
+    <button class="btn-clear" id="btn-clear">Tout effacer</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
